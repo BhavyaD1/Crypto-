@@ -1,65 +1,194 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Hype vs Price Tracker</title>
+    <title>HYPE TRACKER // TERMINAL</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .card { background: #2d2d2d; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        h1 { text-align: center; color: #00ff41; }
-        .status { text-align: center; font-size: 12px; color: #888; margin-top: 10px; }
+        /* --- GLOBAL TERMINAL STYLES --- */
+        body { 
+            background-color: #050505; 
+            color: #00ff41; 
+            font-family: 'Share Tech Mono', monospace; 
+            margin: 0;
+            padding: 20px;
+            /* Subtle grid background */
+            background-image: linear-gradient(rgba(0, 255, 65, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 65, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container { 
+            max-width: 1200px; 
+            margin: 40px auto; 
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+            background: rgba(10, 10, 10, 0.9);
+            padding: 30px;
+            position: relative;
+        }
+
+        /* --- HEADER --- */
+        h1 { 
+            text-align: center; 
+            font-size: 3rem; 
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #00ff41, 0 0 20px #00ff41;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        /* --- LIVE INDICATOR --- */
+        .live-badge {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: red;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 10px red;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* --- CHART CARD --- */
+        .card { 
+            background: #000; 
+            border: 1px solid #333; 
+            padding: 20px; 
+            border-radius: 4px; 
+            position: relative;
+        }
+
+        /* Decorative corners for the card */
+        .card::before {
+            content: ''; position: absolute; top: -1px; left: -1px; width: 20px; height: 20px;
+            border-top: 2px solid #00ff41; border-left: 2px solid #00ff41;
+        }
+        .card::after {
+            content: ''; position: absolute; bottom: -1px; right: -1px; width: 20px; height: 20px;
+            border-bottom: 2px solid #00ff41; border-right: 2px solid #00ff41;
+        }
+
+        .status { 
+            text-align: right; 
+            font-size: 12px; 
+            color: #444; 
+            margin-top: 10px; 
+        }
+
+        /* --- LOADING OVERLAY --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 2rem; color: #00ff41;
+            transition: opacity 1s;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
+    <div id="loader">INITIALIZING SYSTEM...</div>
+
     <div class="container">
-        <h1>📊 Bitcoin: Hype vs Reality</h1>
+        <h1><span class="live-badge"></span>MARKET SENTIENCE</h1>
+        <div class="subtitle">TRACKING: BITCOIN (BTC) // INTERVAL: 60s</div>
+
         <div class="card">
             <canvas id="cryptoChart"></canvas>
         </div>
-        <div class="status">Data updates automatically every 60 seconds via Background Worker</div>
+        
+        <div class="status">
+            SYSTEM STATUS: ONLINE // WORKER: ACTIVE // <span id="last-update">WAITING FOR DATA...</span>
+        </div>
     </div>
 
     <script>
+        // Remove loader after 1 second
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 1000);
+        }, 1000);
+
         const ctx = document.getElementById('cryptoChart').getContext('2d');
         
+        // --- GRADIENT SETUP ---
+        // We create a gradient fill for the price line
+        let gradientPrice = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientPrice.addColorStop(0, 'rgba(0, 255, 65, 0.5)'); // Matrix Green
+        gradientPrice.addColorStop(1, 'rgba(0, 255, 65, 0.0)');
+
+        let gradientHype = ctx.createLinearGradient(0, 0, 0, 400);
+        gradientHype.addColorStop(0, 'rgba(255, 0, 85, 0.5)'); // Cyberpunk Pink
+        gradientHype.addColorStop(1, 'rgba(255, 0, 85, 0.0)');
+
         const chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [
                     {
-                        label: 'Price ($)',
+                        label: 'PRICE (USD)',
                         data: [],
-                        borderColor: '#00ff41', // Matrix Green
+                        borderColor: '#00ff41',
+                        backgroundColor: gradientPrice,
+                        borderWidth: 2,
+                        fill: true,
                         yAxisID: 'y',
-                        tension: 0.4
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
                     },
                     {
-                        label: 'Hype Score (0-100)',
+                        label: 'HYPE SCORE (0-100)',
                         data: [],
-                        borderColor: '#ff0055', // Cyberpunk Pink
-                        yAxisID: 'y1',
+                        borderColor: '#ff0055',
+                        backgroundColor: gradientHype,
+                        borderWidth: 2,
                         borderDash: [5, 5],
-                        tension: 0.4
+                        yAxisID: 'y1',
+                        tension: 0.3,
+                        pointRadius: 0
                     }
                 ]
             },
             options: {
                 responsive: true,
                 interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { color: '#fff', font: { family: 'Share Tech Mono' } } },
+                },
                 scales: {
+                    x: {
+                        grid: { color: '#222' },
+                        ticks: { color: '#666', font: { family: 'Share Tech Mono' } }
+                    },
                     y: { 
-                        type: 'linear', 
-                        display: true, 
-                        position: 'left',
-                        grid: { color: '#333' }
+                        type: 'linear', display: true, position: 'left',
+                        grid: { color: '#222' },
+                        ticks: { color: '#00ff41', font: { family: 'Share Tech Mono' } }
                     },
                     y1: { 
-                        type: 'linear', 
-                        display: true, 
-                        position: 'right', 
-                        grid: { drawOnChartArea: false } 
+                        type: 'linear', display: true, position: 'right',
+                        grid: { drawOnChartArea: false },
+                        ticks: { color: '#ff0055', font: { family: 'Share Tech Mono' } }
                     }
                 }
             }
@@ -70,18 +199,23 @@
                 const response = await fetch('/api/data');
                 const data = await response.json();
                 
-                chart.data.labels = data.map(d => d.time);
-                chart.data.datasets[0].data = data.map(d => d.price);
-                chart.data.datasets[1].data = data.map(d => d.hype);
-                chart.update();
+                if (data.length > 0) {
+                    chart.data.labels = data.map(d => d.time);
+                    chart.data.datasets[0].data = data.map(d => d.price);
+                    chart.data.datasets[1].data = data.map(d => d.hype);
+                    chart.update();
+
+                    // Update timestamp text
+                    const lastTime = data[data.length - 1].time;
+                    document.getElementById('last-update').innerText = "LAST SYNC: " + lastTime;
+                }
             } catch (err) {
                 console.error("Error fetching data:", err);
             }
         }
 
-        // Load data immediately, then every 5 seconds
         updateChart();
-        setInterval(updateChart, 5000);
+        setInterval(updateChart, 5000); // Check for new data every 5s
     </script>
 </body>
 </html>
