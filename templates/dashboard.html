@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hype vs Price Tracker</title>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: #2d2d2d; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        h1 { text-align: center; color: #00ff41; }
+        .status { text-align: center; font-size: 12px; color: #888; margin-top: 10px; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Bitcoin: Hype vs Reality</h1>
+        <div class="card">
+            <canvas id="cryptoChart"></canvas>
+        </div>
+        <div class="status">Data updates automatically every 60 seconds via Background Worker</div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('cryptoChart').getContext('2d');
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Price ($)',
+                        data: [],
+                        borderColor: '#00ff41', // Matrix Green
+                        yAxisID: 'y',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Hype Score (0-100)',
+                        data: [],
+                        borderColor: '#ff0055', // Cyberpunk Pink
+                        yAxisID: 'y1',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: { 
+                        type: 'linear', 
+                        display: true, 
+                        position: 'left',
+                        grid: { color: '#333' }
+                    },
+                    y1: { 
+                        type: 'linear', 
+                        display: true, 
+                        position: 'right', 
+                        grid: { drawOnChartArea: false } 
+                    }
+                }
+            }
+        });
+
+        async function updateChart() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                
+                chart.data.labels = data.map(d => d.time);
+                chart.data.datasets[0].data = data.map(d => d.price);
+                chart.data.datasets[1].data = data.map(d => d.hype);
+                chart.update();
+            } catch (err) {
+                console.error("Error fetching data:", err);
+            }
+        }
+
+        // Load data immediately, then every 5 seconds
+        updateChart();
+        setInterval(updateChart, 5000);
+    </script>
+</body>
+</html>
