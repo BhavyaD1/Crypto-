@@ -1,0 +1,17 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      # We just check that python is working
+      - python --version
+  build:
+    commands:
+      - echo "Build started on `date`"
+      - echo "Preparing files for Elastic Beanstalk..."
+artifacts:
+  files:
+    - '**/*'
+    
